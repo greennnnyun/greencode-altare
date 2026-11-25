@@ -1,0 +1,4 @@
+<option value="">{{ placeholder }}</option>
+{% for region in regions %}
+  <option value="{{ region.code }}" {% if selected == region.code %}selected{% endif %}>{{ region.name }}</option>
+{% endfor %}

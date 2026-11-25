@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}500 · 服务暂时开小差{% endblock %}
+{% block content %}
+<section class="container-page flex min-h-[60vh] flex-col items-center justify-center py-20 text-center">
+  <p class="text-6xl font-bold text-primary-strong">500</p>
+  <h1 class="mt-4 text-2xl">服务暂时开小差</h1>
+  <p class="mt-2 text-text-muted">请稍后再试，或联系客服 400-820-8800。</p>
+  <a href="{% url 'listings:home' %}" class="btn btn-primary mt-6 rounded-full hover-lift">回到房源广场</a>
+</section>
+{% endblock %}

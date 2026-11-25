@@ -1,0 +1,121 @@
+# 任务：开发「蛋壳栖所」线上租房平台（Django 全栈原型 · Windows 本机部署）
+
+## 0. 一句话目标
+交付一个在本机 `python manage.py runserver` 就能跑起来的 Django 单体应用：游客可浏览筛选房源；租客可注册（邮箱验证码）→收藏→预约→聊天→申请→签合同；房东可发布管理房源并处理预约。视觉为暖白 + 蛋壳黄的现代温馨风，桌面端与移动端都可用。
+
+## 1. 不可协商的硬约束（违反即不合格）
+- 环境：Windows 10/11 本机，已安装 MySQL 8.0+；不用 Docker、不用 WSL。
+- 技术栈：Python 3.11+ / Django 5.x / MySQL 8.0（utf8mb4、端口 3306、库名 `eggshell`）/ Django 模板 + HTMX + Alpine.js。禁止 React、shadcn/ui、TanStack Router。
+- 样式：Tailwind CSS **v4**（`@tailwindcss/cli` 构建，token 写在 `styles.css` 的 `@theme inline`）+ **DaisyUI 5** 作为唯一组件库，不得混入第二个 UI 框架。
+- 数据真实性：全部读写走 MySQL。禁止 SQLite 兜底、禁止 mock/内存数据、禁止为让检查通过而注释掉功能。
+- 安全：所有写操作在视图层做对象级校验；身份证照片必须经鉴权视图 FileResponse 返回，不得走 MEDIA_URL。
+- 凭据：邮箱账号与授权码只从环境变量读取，仓库内（含 README、seed 数据、前端代码、日志）不得出现真实值。
+- 语言 / 时区 / 货币：仅中文，Asia/Shanghai，USE_TZ=True，人民币。
+
+## 2. 优先级与取舍规则
+- P0（缺一项即不合格）：硬约束落地、注册登录（OTP）、房源广场 + 详情 + 收藏、预约全流程、聊天、租房申请 + 合同签署、seed 数据、README 可复现启动。
+- P1（P0 自检通过后再做）：动效打磨、头像下拉切换视角、设施标签 +N 折叠、Admin 优化。
+- 预算不足时：宁可砍 P1 的视觉打磨，也不能砍链路完整性；任何降级必须写进 README「已知限制」，不得静默省略。
+
+## 3. 运行与部署（Windows 适配）
+- 开发启动：`python manage.py runserver`
+- 长期运行：`waitress-serve --port=8000 config.wsgi:application`（Windows 不支持 gunicorn，文档与脚本中不要出现 gunicorn）
+- 静态文件：WhiteNoise 负责 STATIC_ROOT；媒体文件在本地演示环境由 `urls.py` 的 `static(settings.MEDIA_URL, document_root=MEDIA_ROOT)` 提供，README 注明「仅本地演示，非生产方案」。
+- MySQL 驱动：优先 mysqlclient；编译失败改 PyMySQL，并在 `config/__init__.py` 写入 `pymysql.install_as_MySQLdb()`。两者都不可用属阻塞项，需报告，不得换 SQLite。
+- 提供 `.env.example`（DB_NAME / DB_USER / DB_PASSWORD / DB_HOST / DB_PORT / EMAIL_HOST_USER / EMAIL_HOST_PASSWORD / SECRET_KEY / DEBUG），`.env` 加入 `.gitignore`。
+
+## 4. 邮件服务（QQ SMTP）
+- 后端：`smtp.qq.com`，`EMAIL_PORT=465`，`EMAIL_USE_SSL=True`，`EMAIL_USE_TLS=False`（二选一，不要同时开）。
+- 发件账号：`EMAIL_HOST_USER=3163128097@qq.com`；`EMAIL_HOST_PASSWORD` 为邮箱设置里生成的**授权码**，不是登录密码，只从环境变量读，示例值写成 `<你的授权码>`。
+- 验证码邮件：主题「蛋壳栖所 · 验证码」，正文含 6 位数字与「10 分钟内有效」提示，纯文本 + 简单 HTML 两版；不要附带外链图片，降低进垃圾箱概率。
+- 发送失败要捕获异常并给前端明确提示（如「验证码发送失败，请稍后重试」），不得静默吞掉异常。
+- 同一邮箱 60 秒内只能发 1 封，同一 IP 每小时 ≤10 封。
+- 提供 `python manage.py send_test_mail <to>` 命令用于验证配置，README 写明用法。
+
+## 5. 认证与账号
+- 自定义 User（AbstractUser 扩展，role: tenant|landlord；email 唯一，入库前统一转小写）。
+- EmailOTP：6 位数字，10 分钟过期，60 秒重发冷却，同一邮箱 10 分钟内累计 5 次错误即作废。
+- 注册需邮箱验证码激活；登录仅邮箱 + 密码（无验证码）；忘记密码走数字验证码重置，不用 Django 默认的链接重置。
+- 密码 ≥8 位且含字母与数字；登录连续失败 5 次锁 10 分钟。
+- 保留 Django Admin（/admin）作运营兜底。
+
+## 6. 视觉规范
+语义 token 统一写在 `styles.css`（oklch，模板只消费 theme utility）：
+`surface`（暖白）/ `surface-muted`（浅灰）/ `border` / `text` / `text-muted` / `primary`（蛋壳黄 oklch(0.72 0.16 68)）/ `primary-strong`（#C2571A，用于文字）/ `radius-card` 16px / `shadow-card` 柔和多层阴影。
+- 字体：系统中文字体栈；正文 14–16px，标题 20 / 24 / 32。
+- 断点：<768px 单列 + 详情页 fixed 底部操作条；≥1024px 容器 max-w 1200px 居中；≥1280px 房源三列。
+- 卡片大圆角 + 充足留白；按钮 hover 上浮变色；输入框聚焦外发光。
+- 顶部固定导航：Logo「蛋壳栖所」+ 房源广场 / 消息中心 / 个人中心 + 头像下拉；底部全局 Footer（客服电话、邮箱、地址）。
+- 动效只做三处：滚动渐入（reveal / reveal-up / reveal-zoom + 交错延迟）、气泡消息入场、签署成功弹跳。CSS animation + IntersectionObserver 实现，禁止 framer-motion 等重型库。
+
+## 7. 功能模块（每项含验收点）
+### 模块1 房源广场
+- 首页大图 Banner（温馨公寓实景 + Slogan「把每一次搬家，都变成一次归巢。」），搜索卡片悬浮压在 Banner 下缘，不与文案重叠。
+- 搜索：区域下拉、起价 / 上限、户型、排序（最新发布 / 价格升 / 价格降）、找房、清空筛选。
+- 卡片：封面图、名称、区域、面积楼层、户型角标、设施标签（最多 4 个 + N）、月租金高亮、右上角收藏心形。
+- 详情：多图轮播（左右箭头 + 圆点，支持键盘左右）、地址 / 面积 / 楼层 / 朝向四格、设施列表、租金与付款方式；右侧 sticky 价格卡 +「收藏」「发起预约」「申请租房」；移动端 fixed 操作条。
+- 验收：筛选结果条数与卡片数一致；重复收藏不产生重复记录且不报错。
+
+### 模块2 预约看房
+- 详情页弹窗：姓名、手机号（1 开头 11 位）、期望看房日期（min=今天）、备注留言；提交 toast「预约成功，请等待管家联系」。
+- 租客「我的预约」：房源名、预约时间、状态（待确认 / 已确认 / 已完成 / 已取消），pending 与 confirmed 可取消。
+- 房东「预约管理」：按房源筛选，pending→确认/取消，confirmed→标记完成，仅房源 owner 可操作。
+- 房源置为 rented 时，在同一数据库事务内把该房源所有 pending 预约改为 cancelled，并禁止新预约与新申请。
+
+### 模块3 用户中心
+- 资料：头像上传（存 MEDIA_ROOT）、昵称、手机号（选填、不唯一、不做短信验证）、邮箱只读、改密入口。
+- 身份认证：身份证正反面上传，两面齐全自动点亮「已认证」标签。
+- 头像下拉「切换为租客视角 / 切换为房东视角」（localStorage 持久化视图偏好）；真实权限以 User.role 与对象所有权为准，切换视角不改变权限。
+
+### 模块4 房源管理（房东）
+- 发布表单：多图上传（≤8 张，首图带封面角标，hover 删除）、标题、区域、详细地址、面积、户型、楼层、租金、付款方式 chips、设施多选 chips、描述。
+- 列表：房源 ID、名称、状态彩色标签（上架绿 / 下架灰 / 已租出红）、编辑、删除（二次确认）。
+- 状态切换：listed→下架/标记已租出；off→重新上架；rented→恢复上架。
+
+### 模块5 租房业务
+- 仿微信聊天：左侧联系人列表（各房东，未读红点），右侧聊天窗口（仅文本、气泡样式、日期分隔、Enter 发送、深链 `?c=conversationId`）。
+- 轮询固定 4 秒；`document.hidden` 时暂停，页面可见后立即拉一次；只取 `id > 上次最大 id`；未读数 = 对方消息中 id 大于我的 last_read_id 的条数，双方各存一个游标字段。
+- 申请：详情页与聊天页均有入口，创建后跳转合同页。
+- 合同页：纸张质感，七条摘要（租赁期限、租金与押金、付款方式、房屋用途、维修责任、违约责任、争议解决），正文由实现方填充占位文案；动态填入房源 / 租金 / 押金 / 起租日 / 租期 / 付款方式；首期应付 = 押金 + 月租 × 付款月数（由房源 payment 字段推导，如押一付一、押一付三）；起租日与租期可编辑，勾选同意后签署并播放成功动画。
+- 签署后锁定：起租日 / 租期只读，status 置 signed 并记录 signed_at；重复提交返回已签署状态，不产生新记录。
+- 验收：(user, listing) 唯一约束生效，同一房源无法重复申请。
+
+## 8. 数据模型（Django ORM / MySQL）
+- User：role（tenant|landlord）、email（唯一、小写）。
+- Profile（OneToOne）：nickname、phone、avatar、id_card_front、id_card_back、verified。
+- EmailOTP：email、code（6 位）、purpose（signup|reset_password）、expires_at、used、created_at。
+- Listing：owner、title、district、address、house_type、area、floor、orientation、rent、payment、amenities(JSON)、images(JSON)、description、status（listed|off|rented）、is_deleted、created_at；删除用软删除，避免合同与消息出现悬空外键。
+- Favorite：user、listing、created_at，唯一约束 (user, listing)。
+- Viewing：user、listing、name、phone、visit_date、note、status（pending|confirmed|completed|cancelled）、created_at。
+- Conversation：listing、tenant、landlord、`tenant_last_read_id`、`landlord_last_read_id`（只保留这两个游标字段）。
+- Message：conversation、sender、content（仅文本）、created_at。
+- RentalApplication：user、listing、status（pending|signed）、start_date、months、deposit、first_payment、signed_at、created_at，唯一约束 (user, listing)。
+
+## 9. 隐私与权限（视图层）
+- Listing 增删改仅 owner 且 role=landlord；Viewing 确认/取消/完成仅房源 owner；合同签署仅申请人本人；Message 读写仅会话参与方。
+- 身份证照片：鉴权后 FileResponse，仅本人与运营可访问；文件名 uuid 随机化，丢弃原始文件名。
+- 上传限制：jpg/png/webp 白名单，单张 ≤5MB，Pillow 二次校验并压缩到宽 ≤1600px。
+- 未登录访问受限页由 login_required 引导到登录页。
+
+## 10. 示例数据
+- `python manage.py seed` 生成，**幂等**（重复执行不重复插入），不依赖 fixture 里易失效的图片路径。
+- 建 1 个房东演示账号（role=landlord）+ 1 个租客账号（role=tenant），邮箱与密码写进 README。
+- 房东发布 ≥6 套房源，覆盖单间 / 一室一厅 / 两室，月租 2000–6000；每套至少 3 个设施标签、1 种付款方式、≥60 字描述。
+- `seed_media/` 内含 ≥18 张本地图片，seed 复制到 MEDIA_ROOT，不引用在线 URL。
+
+## 11. 交付清单
+- 代码 + `requirements.txt` + `.env.example` + `README.md`（安装、建库、迁移、seed、两种启动方式、演示账号、发信配置、已知限制）。
+- 目录结构：`config/`（settings/urls/wsgi）、`accounts/`、`listings/`、`bookings/`、`chat/`、`contracts/`、`templates/`、`static/`。
+- CSS 构建命令写进 README，一步可执行。
+
+## 12. 验收（命令 + 期望 + 负向用例）
+- `python manage.py check` → 0 issues。
+- `python manage.py makemigrations --check --dry-run` → No changes detected。
+- `python manage.py test` → 至少覆盖：OTP 激活成功、同邮箱 5 次错误后作废、收藏唯一约束、越权改他人房源 403、非 owner 确认预约 403、rented 后预约 / 申请被拒、重复签署幂等、未授权访问身份证图 403。
+- `python manage.py send_test_mail <收件邮箱>` → 实际收到邮件。
+- 手工冒烟：注册→激活→登录→收藏→预约→聊天→申请→签署，MySQL 中能看到对应记录。
+- 忘记密码全流程跑通，新密码可登录。
+- 375px 宽度下无横向滚动、无元素重叠。
+
+## 13. 执行方式
+分 6 个里程碑，每步自检通过再继续：① 脚手架 + MySQL + Tailwind 构建 ② 认证与邮件 ③ 房源与收藏 ④ 预约 ⑤ 聊天 ⑥ 合同 + seed + 打磨。遇到阻塞先说明阻塞点与影响，再给可选方案；不得静默降级，不得虚报测试通过。

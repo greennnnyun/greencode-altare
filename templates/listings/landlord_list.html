@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load eggshell %}
+{% block title %}房源管理 · 蛋壳栖所{% endblock %}
+{% block content %}
+<div class="container-page pt-24">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-[26px] sm:text-[32px]">房源管理</h1>
+      <p class="mt-1 text-sm text-text-muted">共 {{ listings|length }} 套在管房源，可上下架、标记租出或编辑。</p>
+    </div>
+    <a href="{% url 'listings:listing_create' %}" class="btn btn-primary rounded-full hover-lift">
+      <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+      发布新房源
+    </a>
+  </div>
+
+  <div class="mt-6 space-y-3">
+    {% for listing in listings %}
+      <div class="card-soft p-4 sm:p-5 reveal-up" style="--reveal-delay:0ms">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-surface-muted">
+              {% if listing.cover_image %}
+                <img src="{{ listing.cover_image|media_url }}" alt="{{ listing.title }}" class="h-full w-full object-cover">
+              {% else %}
+                <div class="flex h-full w-full items-center justify-center text-xs text-text-muted">无图</div>
+              {% endif %}
+            </div>
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-[11px] text-text-muted">ID {{ listing.pk }}</span>
+                <span class="badge badge-sm {{ listing.status_badge_class }}">{{ listing.status_label }}</span>
+              </div>
+              <p class="truncate font-medium">{{ listing.title }}</p>
+              <p class="text-xs text-text-muted">{{ listing.region_display }} · {{ listing.house_type_label }} · {{ listing.area }}㎡ · ¥{{ listing.rent }}/月</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <a href="{% url 'listings:detail' listing.pk %}" class="btn btn-ghost btn-xs rounded-full border border-border">预览</a>
+            <a href="{% url 'listings:listing_edit' listing.pk %}" class="btn btn-ghost btn-xs rounded-full border border-border">编辑</a>
+            {% if listing.status == 'listed' %}
+              <form method="post" action="{% url 'listings:listing_status' listing.pk %}" class="inline">
+                {% csrf_token %}<input type="hidden" name="action" value="off">
+                <button type="submit" class="btn btn-ghost btn-xs rounded-full border border-border">下架</button>
+              </form>
+              <form method="post" action="{% url 'listings:listing_status' listing.pk %}" class="inline"
+                    onsubmit="return confirm('确定把这套房源标记为已租出吗？待确认预约会自动取消。')">
+                {% csrf_token %}<input type="hidden" name="action" value="rented">
+                <button type="submit" class="btn btn-warning btn-xs rounded-full">标记已租出</button>
+              </form>
+            {% else %}
+              <form method="post" action="{% url 'listings:listing_status' listing.pk %}" class="inline">
+                {% csrf_token %}<input type="hidden" name="action" value="relist">
+                <button type="submit" class="btn btn-success btn-xs rounded-full">重新上架</button>
+              </form>
+            {% endif %}
+            <form method="post" action="{% url 'listings:listing_delete' listing.pk %}" class="inline"
+                  onsubmit="return confirm('删除后房源将从广场消失，历史合同与消息会保留。确定删除吗？')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-ghost btn-xs rounded-full text-error border border-border">删除</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="card-soft p-12 text-center">
+        <p class="text-lg">还没有发布房源</p>
+        <p class="mt-1 text-sm text-text-muted">发布第一套房源，让租客在广场上遇见它。</p>
+        <a href="{% url 'listings:listing_create' %}" class="btn btn-primary mt-5 rounded-full hover-lift">发布房源</a>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

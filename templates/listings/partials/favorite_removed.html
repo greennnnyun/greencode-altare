@@ -1,0 +1,5 @@
+<div class="hidden" aria-hidden="true"></div>
+<p id="fav-summary" hx-swap-oob="innerHTML">共 <span class="font-semibold text-text">{{ total_count }}</span> 套 · 可租 <span class="font-semibold text-text">{{ available_count }}</span> 套 · 已下架或已租出 <span class="font-semibold text-text">{{ unavailable_count }}</span> 套</p>
+<span id="nav-fav-badge" hx-swap-oob="true" class="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong {% if not total_count %}hidden{% endif %}">{{ total_count }}</span>
+{% if not unavailable_count %}<section id="fav-unavailable" hx-swap-oob="delete"></section>{% endif %}
+{% if not available_count %}<div id="fav-available-grid" hx-swap-oob="innerHTML">{% include 'listings/partials/favorites_empty_grid.html' %}</div>{% endif %}

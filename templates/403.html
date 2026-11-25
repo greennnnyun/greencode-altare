@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}403 · 没有权限{% endblock %}
+{% block content %}
+<section class="container-page flex min-h-[60vh] flex-col items-center justify-center py-20 text-center">
+  <p class="text-6xl font-bold text-primary-strong">403</p>
+  <h1 class="mt-4 text-2xl">这扇门暂时不对你开放</h1>
+  <p class="mt-2 text-text-muted">你访问的内容需要更高的权限，或不属于当前账号。</p>
+  <a href="{% url 'listings:home' %}" class="btn btn-primary mt-6 rounded-full hover-lift">回到房源广场</a>
+</section>
+{% endblock %}

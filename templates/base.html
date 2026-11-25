@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>{% block title %}蛋壳栖所 · 把每一次搬家，都变成一次归巢{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="{% block body_class %}{% endblock %}">
+  <header class="fixed inset-x-0 top-0 z-50 nav-blur border-b border-border">
+    <div class="container-page flex h-16 items-center justify-between gap-3">
+      <a href="{% url 'listings:home' %}" class="flex items-center gap-2.5 shrink-0">
+        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 border border-primary/40">
+          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="#c2571a" stroke-width="1.6">
+            <path d="M12 3c3.6 2.4 6 6.1 6 9.5A6 6 0 0 1 6 12.5C6 9.1 8.4 5.4 12 3Z" stroke-linecap="round"/>
+            <path d="M9.5 15.2c1.5 1.1 3.5 1.1 5 0" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="text-[17px] font-semibold tracking-tight">蛋壳栖所</span>
+      </a>
+
+      <nav class="hidden items-center gap-1 md:flex">
+        <a href="{% url 'listings:home' %}" class="rounded-full px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-surface-muted transition-colors">房源广场</a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'listings:my_favorites' %}" class="rounded-full px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-surface-muted transition-colors">
+            我的收藏<span id="nav-fav-badge" class="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong {% if not nav_favorites %}hidden{% endif %}">{{ nav_favorites|default:0 }}</span>
+          </a>
+          <a href="{% url 'chat:inbox' %}" class="relative rounded-full px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-surface-muted transition-colors">
+            消息中心
+            <span id="nav-unread-badge" class="absolute -right-0.5 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-semibold text-white {% if not nav_unread %}hidden{% endif %}">{{ nav_unread|default:0 }}</span>
+          </a>
+          <a href="{% url 'contracts:list' %}" class="rounded-full px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-surface-muted transition-colors">租房合同</a>
+          {% if user.is_landlord %}
+            <a href="{% url 'listings:landlord_listings' %}" class="rounded-full px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-surface-muted transition-colors">房源管理</a>
+            <a href="{% url 'bookings:manage' %}" class="rounded-full px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-surface-muted transition-colors">预约管理</a>
+          {% else %}
+            <a href="{% url 'bookings:mine' %}" class="rounded-full px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-surface-muted transition-colors">我的预约</a>
+          {% endif %}
+        {% endif %}
+      </nav>
+
+      <div class="flex items-center gap-2">
+        {% if user.is_authenticated %}
+          <div class="dropdown dropdown-end" x-data="{open:false}">
+            <button type="button" class="btn btn-ghost btn-sm h-10 w-10 rounded-full p-0 hover-lift" @click="open = !open" @click.outside="open = false" aria-label="账户菜单">
+              {% if user.profile.avatar %}
+                <img src="{{ user.profile.avatar.url }}" alt="{{ user.profile.display_name }}" class="h-9 w-9 rounded-full object-cover border border-border">
+              {% else %}
+                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/25 text-primary-strong text-sm font-semibold border border-primary/30">{{ user.profile.display_name|slice:":1" }}</span>
+              {% endif %}
+            </button>
+            <div x-show="open" x-cloak x-transition.opacity.duration.150ms class="absolute right-0 mt-2 w-64 rounded-card border border-border bg-surface p-2 shadow-card">
+              <div class="px-3 py-2 border-b border-border mb-1">
+                <p class="text-sm font-medium truncate">{{ user.profile.display_name }}</p>
+                <p class="text-xs text-text-muted truncate">{{ user.email }} · {{ user.role_label }}</p>
+              </div>
+              <a href="{% url 'accounts:profile' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-surface-muted">个人中心</a>
+              <a href="{% url 'listings:my_favorites' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-surface-muted">我的收藏{% if nav_favorites %} <span class="text-text-muted">（{{ nav_favorites }}）</span>{% endif %}</a>
+              <a href="{% url 'contracts:list' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-surface-muted">租房合同</a>
+              <a href="{% url 'chat:inbox' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-surface-muted md:hidden">消息中心{% if nav_unread %} <span class="text-error">（{{ nav_unread }}）</span>{% endif %}</a>
+              {% if user.is_landlord %}
+                <a href="{% url 'listings:landlord_listings' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-surface-muted">房源管理</a>
+                <a href="{% url 'bookings:manage' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-surface-muted">预约管理</a>
+              {% else %}
+                <a href="{% url 'bookings:mine' %}" class="block rounded-lg px-3 py-2 text-sm hover:bg-surface-muted">我的预约</a>
+              {% endif %}
+              <div class="my-1 border-t border-border"></div>
+              <form method="post" action="{% url 'accounts:logout' %}" class="mt-1">
+                {% csrf_token %}
+                <button type="submit" class="w-full rounded-lg px-3 py-2 text-left text-sm text-error hover:bg-surface-muted">退出登录</button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <a href="{% url 'accounts:login' %}" class="btn btn-ghost btn-sm rounded-full">登录</a>
+          <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm rounded-full hover-lift">免费注册</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if messages %}
+    <div class="container-page pt-20 pb-1 space-y-2">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} shadow-sm text-sm rounded-xl">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <main class="{% if not messages %}pt-16{% endif %}">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block footer %}
+  <footer class="mt-20 border-t border-border bg-surface-muted">
+    <div class="container-page grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="sm:col-span-2 lg:col-span-2">
+        <div class="flex items-center gap-2">
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 border border-primary/40 text-primary-strong text-sm font-bold">蛋</span>
+          <span class="font-semibold">蛋壳栖所</span>
+        </div>
+        <p class="mt-3 max-w-md text-sm text-text-muted">把每一次搬家，都变成一次归巢。我们相信，租房不只是找一个落脚点，而是给生活留一盏灯。</p>
+      </div>
+      <div>
+        <p class="text-sm font-medium">联系我们</p>
+        <ul class="mt-3 space-y-2 text-sm text-text-muted">
+          <li>客服电话：19325631660（刘）</li>
+          <li>邮箱：3163128097@qq.com</li>
+          <li>地址：哈尔滨信息工程学院</li>
+        </ul>
+      </div>
+      <div>
+        <p class="text-sm font-medium">服务时间</p>
+        <ul class="mt-3 space-y-2 text-sm text-text-muted">
+          <li>周一至周日 9:00–21:00</li>
+          <li>看房预约由管家 1 对 1 跟进</li>
+          <li>平台仅作信息撮合与合同留痕</li>
+        </ul>
+      </div>
+    </div>
+    <div class="border-t border-border">
+      <div class="container-page py-4 text-center text-xs text-text-muted">© 2026 蛋壳栖所 · 本原型仅用于本地演示</div>
+    </div>
+  </footer>
+  {% endblock %}
+
+  <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+  <script src="{% static 'vendor/alpine.min.js' %}" defer></script>
+  <script src="{% static 'js/app.js' %}" defer></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

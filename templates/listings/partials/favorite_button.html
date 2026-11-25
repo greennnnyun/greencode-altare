@@ -1,0 +1,29 @@
+{% load eggshell %}
+<div id="fav-{{ listing.pk }}" class="{% if mode == 'card' %}inline-block{% else %}inline-flex{% endif %}">
+  <form method="post" action="{% url 'listings:favorite' listing.pk %}"
+        hx-post="{% url 'listings:favorite' listing.pk %}"
+        hx-target="{% if mode == 'favorites' %}closest .fav-card{% else %}#fav-{{ listing.pk }}{% endif %}"
+        hx-swap="outerHTML">
+    {% csrf_token %}
+    <input type="hidden" name="mode" value="{{ mode|default:'card' }}">
+    {% if favorited %}
+      <input type="hidden" name="action" value="remove">
+      <button type="submit" aria-label="取消收藏" title="取消收藏"
+        class="{% if mode == 'card' %}flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 backdrop-blur shadow-sm border border-border hover:bg-primary/15{% else %}btn btn-outline btn-sm rounded-full border-primary/50 text-primary-strong hover:bg-primary/15{% endif %} transition-colors">
+        <span class="flex items-center gap-1">
+          <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="#c2571a" stroke="#c2571a" stroke-width="1.5"><path d="M12 20s-7-4.5-7-9.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7 3.1C19 15.5 12 20 12 20Z"/></svg>
+          {% if mode != 'card' %}<span>已收藏</span>{% endif %}
+        </span>
+      </button>
+    {% else %}
+      <input type="hidden" name="action" value="add">
+      <button type="submit" aria-label="收藏房源" title="收藏房源"
+        class="{% if mode == 'card' %}flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 backdrop-blur shadow-sm border border-border hover:bg-primary/15{% else %}btn btn-outline btn-sm rounded-full border-border hover:border-primary hover:bg-primary/10{% endif %} transition-colors">
+        <span class="flex items-center gap-1">
+          <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="#6b5d4f" stroke-width="1.6"><path d="M12 20s-7-4.5-7-9.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7 3.1C19 15.5 12 20 12 20Z"/></svg>
+          {% if mode != 'card' %}<span>收藏</span>{% endif %}
+        </span>
+      </button>
+    {% endif %}
+  </form>
+</div>

@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load eggshell %}
+{% block title %}{% if mode == 'create' %}发布房源{% else %}编辑房源{% endif %} · 蛋壳栖所{% endblock %}
+{% block content %}
+<div class="container-page pt-24 max-w-3xl">
+  <a href="{% url 'listings:landlord_listings' %}" class="text-sm text-text-muted hover:text-primary-strong">← 返回房源管理</a>
+  <h1 class="mt-3 text-[26px] sm:text-[32px]">{% if mode == 'create' %}发布新房源{% else %}编辑房源{% endif %}</h1>
+  <p class="mt-1 text-sm text-text-muted">真实描述与清晰图片，会让合适的租客更快找到这里。</p>
+
+  <form method="post" enctype="multipart/form-data" class="mt-6 space-y-4">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-error text-sm">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <section class="card-soft p-5 sm:p-6">
+      <h2 class="text-[18px]">基本信息</h2>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <label class="block sm:col-span-2">
+          <span class="mb-1 block text-xs text-text-muted">房源标题</span>
+          {{ form.title }}{% if form.title.errors %}<p class="mt-1 text-xs text-error">{{ form.title.errors|join:'；' }}</p>{% endif %}
+        </label>
+        <div class="sm:col-span-2 grid gap-4 sm:grid-cols-3">
+          <label class="block">
+            <span class="mb-1 block text-xs text-text-muted">省份</span>
+            {{ form.province }}{% if form.province.errors %}<p class="mt-1 text-xs text-error">{{ form.province.errors|join:'；' }}</p>{% endif %}
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-xs text-text-muted">城市</span>
+            {{ form.city }}{% if form.city.errors %}<p class="mt-1 text-xs text-error">{{ form.city.errors|join:'；' }}</p>{% endif %}
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-xs text-text-muted">区县</span>
+            {{ form.district }}{% if form.district.errors %}<p class="mt-1 text-xs text-error">{{ form.district.errors|join:'；' }}</p>{% endif %}
+          </label>
+        </div>
+        <label class="block">
+          <span class="mb-1 block text-xs text-text-muted">户型</span>
+          {{ form.house_type }}{% if form.house_type.errors %}<p class="mt-1 text-xs text-error">{{ form.house_type.errors|join:'；' }}</p>{% endif %}
+        </label>
+        <label class="block sm:col-span-2">
+          <span class="mb-1 block text-xs text-text-muted">详细地址</span>
+          {{ form.address }}{% if form.address.errors %}<p class="mt-1 text-xs text-error">{{ form.address.errors|join:'；' }}</p>{% endif %}
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs text-text-muted">面积（㎡）</span>
+          {{ form.area }}{% if form.area.errors %}<p class="mt-1 text-xs text-error">{{ form.area.errors|join:'；' }}</p>{% endif %}
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs text-text-muted">楼层</span>
+          {{ form.floor }}{% if form.floor.errors %}<p class="mt-1 text-xs text-error">{{ form.floor.errors|join:'；' }}</p>{% endif %}
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs text-text-muted">朝向</span>
+          {{ form.orientation }}{% if form.orientation.errors %}<p class="mt-1 text-xs text-error">{{ form.orientation.errors|join:'；' }}</p>{% endif %}
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs text-text-muted">月租金（元）</span>
+          {{ form.rent }}{% if form.rent.errors %}<p class="mt-1 text-xs text-error">{{ form.rent.errors|join:'；' }}</p>{% endif %}
+        </label>
+        <div class="block sm:col-span-2">
+          <span class="mb-2 block text-xs text-text-muted">付款方式</span>
+          <div class="flex flex-wrap gap-2">
+            {% for value, label in payment_choices %}
+              <label class="cursor-pointer">
+                <input type="radio" name="payment" value="{{ value }}" class="peer sr-only" {% if form.payment.value == value %}checked{% endif %}>
+                <span class="inline-flex rounded-full border border-border bg-surface px-4 py-1.5 text-sm text-text-muted transition-all peer-checked:border-primary peer-checked:bg-primary/20 peer-checked:text-primary-strong peer-focus-visible:ring-2 peer-focus-visible:ring-primary/40">{{ label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          {% if form.payment.errors %}<p class="mt-1 text-xs text-error">{{ form.payment.errors|join:'；' }}</p>{% endif %}
+        </div>
+        <label class="block sm:col-span-2">
+          <span class="mb-1 block text-xs text-text-muted">房源描述</span>
+          {{ form.description }}
+          {% if form.description.errors %}<p class="mt-1 text-xs text-error">{{ form.description.errors|join:'；' }}</p>{% endif %}
+        </label>
+      </div>
+    </section>
+
+    <section class="card-soft p-5 sm:p-6">
+      <h2 class="text-[18px]">设施标签</h2>
+      <p class="mt-1 text-xs text-text-muted">选中后会在房源卡片与详情页展示，建议至少选择 3 项。</p>
+      <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {% for checkbox in form.amenities %}
+          <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text-muted transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/15 has-[:checked]:text-primary-strong">
+            {{ checkbox.tag }}
+            <span>{{ checkbox.choice_label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+      {% if form.amenities.errors %}<p class="mt-2 text-xs text-error">{{ form.amenities.errors|join:'；' }}</p>{% endif %}
+    </section>
+
+    <section class="card-soft p-5 sm:p-6">
+      <h2 class="text-[18px]">房源图片</h2>
+      <p class="mt-1 text-xs text-text-muted">最多 8 张，首图为封面；支持 jpg / png / webp，单张不超过 5MB。</p>
+
+      {% if mode == 'edit' and existing_images %}
+        <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {% for path in existing_images %}
+            <div x-data="{gone:false}" class="relative overflow-hidden rounded-xl border border-border bg-surface-muted" :class="gone ? 'opacity-40' : ''">
+              <img src="{{ path|media_url }}" alt="已上传图片" class="aspect-square w-full object-cover">
+              {% if forloop.first %}<span class="absolute left-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-white shadow-sm" x-show="!gone">封面</span>{% endif %}
+              <button type="button" @click="gone = !gone" class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/45 text-white text-xs backdrop-blur hover:bg-error" :title="gone ? '恢复' : '删除'" x-text="gone ? '↺' : '✕'"></button>
+              <input type="hidden" name="remove_images" value="{{ path }}" :disabled="!gone">
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div x-data="imagePicker()" class="mt-4">
+        <label class="block">
+          <span class="mb-1 block text-xs text-text-muted">{% if mode == 'edit' %}追加图片{% else %}选择图片{% endif %}</span>
+          <input type="file" name="{% if mode == 'edit' %}new_images{% else %}images{% endif %}" multiple accept="image/jpeg,image/png,image/webp"
+                 class="file-input file-input-bordered w-full field-glow" @change="addFiles($event)">
+        </label>
+        <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4" x-show="previews.length" x-cloak>
+          <template x-for="(item, index) in previews" :key="item.url">
+            <div class="relative overflow-hidden rounded-xl border border-border bg-surface-muted">
+              <img :src="item.url" :alt="item.name" class="aspect-square w-full object-cover">
+              <span class="absolute left-2 top-2 rounded-full bg-surface/90 px-2 py-0.5 text-[10px] text-text-muted shadow-sm" x-show="index === 0 && {{ existing_images|length }} === 0">封面</span>
+              <button type="button" @click="removeFile(index)" class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/45 text-white text-xs backdrop-blur hover:bg-error" aria-label="移除">✕</button>
+            </div>
+          </template>
+        </div>
+        <p class="mt-2 text-[11px] text-text-muted" x-show="previews.length" x-cloak>已选择 <span x-text="previews.length"></span> 张新图片</p>
+      </div>
+    </section>
+
+    <div class="flex flex-wrap gap-3 pb-6">
+      <button type="submit" class="btn btn-primary rounded-full hover-lift px-6">{% if mode == 'create' %}发布房源{% else %}保存修改{% endif %}</button>
+      <a href="{% url 'listings:landlord_listings' %}" class="btn btn-ghost rounded-full border border-border">取消</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('alpine:init', function () {
+    Alpine.data('imagePicker', function () {
+      return {
+        files: [],
+        previews: [],
+        addFiles(event) {
+          var incoming = Array.prototype.slice.call(event.target.files || []);
+          var room = Math.max(0, 8 - this.files.length);
+          incoming = incoming.slice(0, room);
+          this.files = this.files.concat(incoming);
+          this.syncInput(event.target);
+          this.renderPreviews();
+          if (incoming.length < (event.target.files || []).length) {
+            window.showToast('最多上传 8 张图片（含已上传）', 'warning');
+          }
+        },
+        removeFile(index) {
+          this.files.splice(index, 1);
+          var input = this.$el.querySelector('input[type=file]');
+          this.syncInput(input);
+          this.renderPreviews();
+        },
+        syncInput(input) {
+          if (!input) return;
+          var transfer = new DataTransfer();
+          this.files.forEach(function (file) { transfer.items.add(file); });
+          input.files = transfer.files;
+        },
+        renderPreviews() {
+          this.previews.forEach(function (item) { URL.revokeObjectURL(item.url); });
+          this.previews = this.files.map(function (file) {
+            return { url: URL.createObjectURL(file), name: file.name };
+          });
+        },
+      };
+    });
+  });
+</script>
+{% endblock %}

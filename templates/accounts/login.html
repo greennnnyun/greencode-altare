@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}登录 · 蛋壳栖所{% endblock %}
+{% block content %}
+<div class="container-page max-w-md pt-24 pb-10">
+  <div class="text-center">
+    <h1 class="text-[26px]">欢迎回来</h1>
+    <p class="mt-1 text-sm text-text-muted">用邮箱和密码登录，继续找你的下一处归巢。</p>
+  </div>
+
+  <form method="post" class="card-soft mt-6 space-y-4 p-6">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next_url }}">
+    {% if form.non_field_errors %}
+      <div class="alert alert-error text-sm">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <label class="block">
+      <span class="mb-1 block text-xs text-text-muted">邮箱</span>
+      {{ form.email }}
+      {% if form.email.errors %}<p class="mt-1 text-xs text-error">{{ form.email.errors|join:'；' }}</p>{% endif %}
+    </label>
+    <label class="block">
+      <span class="mb-1 block text-xs text-text-muted">密码</span>
+      {{ form.password }}
+      {% if form.password.errors %}<p class="mt-1 text-xs text-error">{{ form.password.errors|join:'；' }}</p>{% endif %}
+    </label>
+    <button type="submit" class="btn btn-primary w-full rounded-full hover-lift">登录</button>
+    <div class="flex items-center justify-between text-xs text-text-muted">
+      <a href="{% url 'accounts:password_reset' %}" class="hover:text-primary-strong">忘记密码？</a>
+      <span>连续失败 5 次将锁定 10 分钟</span>
+    </div>
+  </form>
+
+  <p class="mt-4 text-center text-sm text-text-muted">还没有账号？<a href="{% url 'accounts:register' %}" class="text-primary-strong hover:underline">免费注册</a></p>
+</div>
+{% endblock %}

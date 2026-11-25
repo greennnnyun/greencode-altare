@@ -1,0 +1,31 @@
+<div id="viewing-form-wrap">
+  <form hx-post="{% url 'bookings:create' listing.pk %}" hx-target="#viewing-form-wrap" hx-swap="innerHTML"
+        method="post" action="{% url 'bookings:create' listing.pk %}" class="space-y-3">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-error text-sm">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <label class="block">
+      <span class="mb-1 block text-xs text-text-muted">联系人</span>
+      {{ form.name }}
+      {% if form.name.errors %}<p class="mt-1 text-xs text-error">{{ form.name.errors|join:'；' }}</p>{% endif %}
+    </label>
+    <label class="block">
+      <span class="mb-1 block text-xs text-text-muted">手机号</span>
+      {{ form.phone }}
+      {% if form.phone.errors %}<p class="mt-1 text-xs text-error">{{ form.phone.errors|join:'；' }}</p>{% endif %}
+    </label>
+    <label class="block">
+      <span class="mb-1 block text-xs text-text-muted">期望看房日期</span>
+      {{ form.visit_date }}
+      {% if form.visit_date.errors %}<p class="mt-1 text-xs text-error">{{ form.visit_date.errors|join:'；' }}</p>{% endif %}
+    </label>
+    <label class="block">
+      <span class="mb-1 block text-xs text-text-muted">备注留言</span>
+      {{ form.note }}
+      {% if form.note.errors %}<p class="mt-1 text-xs text-error">{{ form.note.errors|join:'；' }}</p>{% endif %}
+    </label>
+    <button type="submit" class="btn btn-primary w-full rounded-full hover-lift mt-2">提交预约</button>
+    <p class="text-center text-[11px] text-text-muted">提交后管家会电话联系你确认具体时间</p>
+  </form>
+</div>

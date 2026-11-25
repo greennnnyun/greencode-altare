@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}注册 · 蛋壳栖所{% endblock %}
+{% block content %}
+<div class="container-page max-w-md pt-24 pb-10">
+  <div class="text-center">
+    <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/20 border border-primary/40">
+      <svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="#c2571a" stroke-width="1.6"><path d="M12 3c3.6 2.4 6 6.1 6 9.5A6 6 0 0 1 6 12.5C6 9.1 8.4 5.4 12 3Z"/><path d="M9.5 15.2c1.5 1.1 3.5 1.1 5 0"/></svg>
+    </span>
+    <h1 class="mt-4 text-[26px]">创建你的蛋壳账号</h1>
+    <p class="mt-1 text-sm text-text-muted">一次注册，收藏、预约、聊天、签合同都在这里。</p>
+  </div>
+
+  <form method="post" class="card-soft mt-6 space-y-4 p-6">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-error text-sm">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <label class="block">
+      <span class="mb-1 block text-xs text-text-muted">邮箱</span>
+      {{ form.email }}
+      {% if form.email.errors %}<p class="mt-1 text-xs text-error">{{ form.email.errors|join:'；' }}</p>{% endif %}
+    </label>
+    <div>
+      <span class="mb-2 block text-xs text-text-muted">我想要</span>
+      <div class="grid gap-2">
+        {% for radio in form.role %}
+          <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/15">
+            {{ radio.tag }}
+            <span>{{ radio.choice_label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+      {% if form.role.errors %}<p class="mt-1 text-xs text-error">{{ form.role.errors|join:'；' }}</p>{% endif %}
+    </div>
+    <label class="block">
+      <span class="mb-1 block text-xs text-text-muted">密码</span>
+      {{ form.password1 }}
+      {% if form.password1.errors %}<p class="mt-1 text-xs text-error">{{ form.password1.errors|join:'；' }}</p>{% endif %}
+    </label>
+    <label class="block">
+      <span class="mb-1 block text-xs text-text-muted">确认密码</span>
+      {{ form.password2 }}
+      {% if form.password2.errors %}<p class="mt-1 text-xs text-error">{{ form.password2.errors|join:'；' }}</p>{% endif %}
+    </label>
+    <button type="submit" class="btn btn-primary w-full rounded-full hover-lift">注册并发送验证码</button>
+    <p class="text-center text-xs text-text-muted">注册后需要邮箱验证码激活，验证码 10 分钟内有效</p>
+  </form>
+
+  <p class="mt-4 text-center text-sm text-text-muted">已有账号？<a href="{% url 'accounts:login' %}" class="text-primary-strong hover:underline">直接登录</a></p>
+</div>
+{% endblock %}

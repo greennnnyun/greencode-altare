@@ -1,0 +1,10 @@
+.venv/
+.env
+*.pyc
+__pycache__/
+node_modules/
+staticfiles/
+media/
+private_media/
+db.sqlite3
+*.log

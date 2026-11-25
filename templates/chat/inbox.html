@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% block title %}消息中心 · 蛋壳栖所{% endblock %}
+{% block content %}
+<div class="container-page pt-20 pb-8">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-[26px]">消息中心</h1>
+      <p class="mt-1 text-sm text-text-muted">与房东/租客的沟通都留在这里，仅文本消息。</p>
+    </div>
+    <span class="text-xs text-text-muted">每 4 秒自动刷新 · 页面隐藏时暂停</span>
+  </div>
+
+  <div class="mt-4 grid gap-4 md:grid-cols-[290px_minmax(0,1fr)]">
+    <aside class="card-soft overflow-hidden max-h-[260px] md:max-h-none">
+      <div class="scroll-thin max-h-[260px] md:max-h-[calc(100dvh-210px)] overflow-y-auto p-2">
+        {% for item in contacts %}
+          <a href="?c={{ item.conversation.id }}" class="flex items-start gap-3 rounded-xl px-3 py-3 transition-colors {% if item.active %}bg-primary/15{% else %}hover:bg-surface-muted{% endif %}">
+            <span class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary-strong border border-primary/30">
+              {{ item.other.profile.display_name|slice:":1" }}
+              {% if item.unread %}<span data-cdot="{{ item.conversation.id }}" class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] text-white">{{ item.unread }}</span>{% endif %}
+            </span>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-baseline justify-between gap-2">
+                <p class="truncate text-sm font-medium">{{ item.other.profile.display_name }}</p>
+                <span class="shrink-0 text-[10px] text-text-muted">{% if item.last %}{{ item.last.created_at|date:"H:i" }}{% endif %}</span>
+              </div>
+              <p class="truncate text-xs text-text-muted">{{ item.conversation.listing.title }}</p>
+              <p data-clast="{{ item.conversation.id }}" class="truncate text-[11px] text-text-muted">{% if item.last %}{{ item.last.content }}{% else %}还没有消息，打个招呼吧{% endif %}</p>
+            </div>
+          </a>
+        {% empty %}
+          <div class="p-6 text-center text-sm text-text-muted">
+            还没有会话。在房源详情页点击「联系房东聊聊」即可开始。
+          </div>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <section class="card-soft overflow-hidden min-w-0">
+      {% if active %}
+        <div class="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-medium">{{ active.listing.title }}</p>
+            <p class="text-xs text-text-muted">与{% if user.id == active.tenant_id %}房东{% else %}租客{% endif %}沟通 · {{ active.listing.region_display }}</p>
+          </div>
+          <div class="flex shrink-0 items-center gap-2">
+            <a href="{% url 'listings:detail' active.listing.pk %}" class="btn btn-ghost btn-xs rounded-full border border-border">查看房源</a>
+            {% if chat_messages %}
+              <form method="post" action="{% url 'chat:clear' active.id %}"
+                    onsubmit="return confirm('清空后，你这一侧的全部聊天记录将被永久删除，且无法恢复；对方仍可正常查看。确定清空吗？');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost btn-xs rounded-full border border-border text-text-muted">清空记录</button>
+              </form>
+            {% endif %}
+            {% if user.is_tenant %}
+              <form method="post" action="{% url 'contracts:apply' active.listing.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary btn-xs rounded-full">申请租房</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="chat-panel flex flex-col">
+          <div id="message-list" class="scroll-thin flex-1 overflow-y-auto px-3 py-4 sm:px-4 space-y-3"
+               {% with last_msg=chat_messages|last %}data-last-date="{% if last_msg %}{{ last_msg.created_at|date:'Y-m-d' }}{% endif %}"{% endwith %}>
+            {% if not chat_messages %}
+              <div class="flex h-full flex-col items-center justify-center text-center text-sm text-text-muted">
+                <span class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted">
+                  <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 1 1 18 0Z"/></svg>
+                </span>
+                <p class="mt-3">{% if active_cleared %}你已清空聊天记录，发送新消息即可重新开始。{% else %}还没有消息，先向房东了解一下房子吧。{% endif %}</p>
+              </div>
+            {% endif %}
+            {% for message in chat_messages %}
+              {% ifchanged message.created_at|date:"Y-m-d" %}
+                <div class="flex justify-center"><span class="rounded-full bg-surface-muted px-2.5 py-1 text-[10px] text-text-muted">{{ message.created_at|date:"Y-m-d" }}</span></div>
+              {% endifchanged %}
+              <div class="flex {% if message.sender_id == user.id %}justify-end{% else %}justify-start{% endif %}">
+                <div class="msg-bubble max-w-[82%] sm:max-w-[70%]">
+                  <div class="rounded-2xl px-3.5 py-2 text-sm leading-6 {% if message.sender_id == user.id %}bg-primary text-[#3a2a18] rounded-br-md{% else %}bg-surface-muted text-text rounded-bl-md border border-border{% endif %}">{{ message.content|linebreaksbr }}</div>
+                  <p class="mt-0.5 text-[10px] text-text-muted {% if message.sender_id == user.id %}text-right{% endif %}">{{ message.created_at|date:"H:i" }}</p>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="border-t border-border bg-surface p-3">
+            <form id="chat-form" class="flex items-end gap-2"
+                  data-send-url="{% url 'chat:send' active.id %}"
+                  data-poll-url="{% url 'chat:poll' active.id %}"
+                  data-conversation="{{ active.id }}"
+                  data-last-id="{% with last_msg=chat_messages|last %}{% if last_msg %}{{ last_msg.id }}{% else %}0{% endif %}{% endwith %}">
+              <textarea id="chat-input" name="content" rows="1" maxlength="2000" required
+                        class="textarea textarea-bordered w-full resize-none field-glow text-sm min-h-11 max-h-32"
+                        placeholder="输入消息，Enter 发送，Shift + Enter 换行"></textarea>
+              <button type="submit" class="btn btn-primary btn-sm h-11 rounded-full px-4">发送</button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <div class="chat-panel flex flex-col items-center justify-center p-8 text-center">
+          <span class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/15">
+            <svg viewBox="0 0 24 24" class="h-8 w-8 text-primary-strong" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 1 1 18 0Z"/></svg>
+          </span>
+          <h2 class="mt-4 text-lg">选择一个会话</h2>
+          <p class="mt-1 max-w-sm text-sm text-text-muted">左侧联系人是与你有关的房源沟通记录。也可以从房源详情页发起新的会话。</p>
+          <a href="{% url 'listings:home' %}" class="btn btn-primary btn-sm mt-5 rounded-full hover-lift">去房源广场</a>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if active %}
+<script>
+  (function () {
+    var form = document.getElementById('chat-form');
+    var list = document.getElementById('message-list');
+    var input = document.getElementById('chat-input');
+    if (!form || !list) return;
+
+    var sendUrl = form.dataset.sendUrl;
+    var pollUrl = form.dataset.pollUrl;
+    var conversationId = form.dataset.conversation;
+    var lastId = parseInt(form.dataset.lastId, 10) || 0;
+    var lastDate = list.dataset.lastDate || '';
+    var csrf = document.querySelector('meta[name="csrf-token"]').content;
+    var sending = false;
+    var polling = false;
+
+    function scrollBottom() {
+      list.scrollTop = list.scrollHeight;
+    }
+
+    function ensureDateDivider(date) {
+      if (!date || date === lastDate) { lastDate = date || lastDate; return; }
+      var divider = document.createElement('div');
+      divider.className = 'flex justify-center';
+      var chip = document.createElement('span');
+      chip.className = 'rounded-full bg-surface-muted px-2.5 py-1 text-[10px] text-text-muted';
+      chip.textContent = date;
+      divider.appendChild(chip);
+      list.appendChild(divider);
+      lastDate = date;
+    }
+
+    function appendMessage(msg) {
+      if (!msg || document.getElementById('msg-' + msg.id)) return;
+      ensureDateDivider(msg.date);
+      var row = document.createElement('div');
+      row.id = 'msg-' + msg.id;
+      row.className = 'flex ' + (msg.mine ? 'justify-end' : 'justify-start');
+      var wrap = document.createElement('div');
+      wrap.className = 'msg-bubble max-w-[82%] sm:max-w-[70%]';
+      var bubble = document.createElement('div');
+      bubble.className = msg.mine
+        ? 'rounded-2xl px-3.5 py-2 text-sm leading-6 bg-primary text-[#3a2a18] rounded-br-md'
+        : 'rounded-2xl px-3.5 py-2 text-sm leading-6 bg-surface-muted text-text rounded-bl-md border border-border';
+      bubble.textContent = msg.content;
+      var time = document.createElement('p');
+      time.className = 'mt-0.5 text-[10px] text-text-muted ' + (msg.mine ? 'text-right' : '');
+      time.textContent = msg.time;
+      wrap.appendChild(bubble);
+      wrap.appendChild(time);
+      row.appendChild(wrap);
+      list.appendChild(row);
+      lastId = Math.max(lastId, msg.id);
+      scrollBottom();
+      updateContactPreview(msg);
+    }
+
+    function updateContactPreview(msg) {
+      var preview = document.querySelector('[data-clast="' + conversationId + '"]');
+      if (preview && msg.content) preview.textContent = msg.content;
+    }
+
+    function updateUnreadBadges(total) {
+      var badge = document.getElementById('nav-unread-badge');
+      if (badge) {
+        if (total > 0) { badge.textContent = total; badge.classList.remove('hidden'); }
+        else { badge.classList.add('hidden'); }
+      }
+      var dot = document.querySelector('[data-cdot="' + conversationId + '"]');
+      if (dot) dot.remove();
+    }
+
+    function poll() {
+      if (document.hidden || polling) return;
+      polling = true;
+      fetch(pollUrl + '?after=' + lastId, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (data) {
+          if (!data || !data.ok) return;
+          (data.messages || []).forEach(appendMessage);
+          if (data.last_id > lastId) lastId = data.last_id;
+          updateUnreadBadges(data.unread_total || 0);
+        })
+        .catch(function () {})
+        .finally(function () { polling = false; });
+    }
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var content = input.value.trim();
+      if (!content || sending) return;
+      sending = true;
+      fetch(sendUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-CSRFToken': csrf,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: new URLSearchParams({ content: content }),
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data && data.ok) {
+            appendMessage(data.message);
+            input.value = '';
+            input.style.height = 'auto';
+          } else {
+            window.showToast('消息发送失败，请稍后重试', 'error');
+          }
+        })
+        .catch(function () { window.showToast('消息发送失败，请检查网络', 'error'); })
+        .finally(function () { sending = false; });
+    });
+
+    input.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    input.addEventListener('input', function () {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 128) + 'px';
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) poll();
+    });
+
+    window.setInterval(poll, 4000);
+    scrollBottom();
+  })();
+</script>
+{% endif %}
+{% endblock %}

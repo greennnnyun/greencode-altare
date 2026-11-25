@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}我的预约 · 蛋壳栖所{% endblock %}
+{% block content %}
+<div class="container-page pt-24">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-[26px] sm:text-[32px]">我的预约</h1>
+      <p class="mt-1 text-sm text-text-muted">待确认与已确认的预约都可以取消。</p>
+    </div>
+    <a href="{% url 'listings:home' %}" class="btn btn-ghost btn-sm rounded-full border border-border">继续找房</a>
+  </div>
+
+  <div class="mt-6 space-y-3">
+    {% for viewing in viewings %}
+      <div class="card-soft p-4 sm:p-5">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="badge badge-sm {{ viewing.status_badge_class }}">{{ viewing.get_status_display }}</span>
+              <span class="text-[11px] text-text-muted">提交于 {{ viewing.created_at|date:"Y-m-d H:i" }}</span>
+            </div>
+            <a href="{% url 'listings:detail' viewing.listing.pk %}" class="mt-1 block truncate font-medium hover:text-primary-strong">{{ viewing.listing.title }}</a>
+            <p class="text-xs text-text-muted">{{ viewing.listing.region_display }} · 期望看房 {{ viewing.visit_date|date:"Y-m-d" }} · 联系人 {{ viewing.name }} {{ viewing.phone }}</p>
+            {% if viewing.note %}<p class="mt-1 text-xs text-text-muted">备注：{{ viewing.note }}</p>{% endif %}
+          </div>
+          <div class="flex shrink-0 items-center gap-2">
+            <a href="{% url 'listings:detail' viewing.listing.pk %}" class="btn btn-ghost btn-xs rounded-full border border-border">查看房源</a>
+            {% if viewing.can_cancel %}
+              <form method="post" action="{% url 'bookings:cancel' viewing.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost btn-xs rounded-full text-error border border-border">取消预约</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="card-soft p-12 text-center">
+        <p class="text-lg">还没有预约记录</p>
+        <p class="mt-1 text-sm text-text-muted">在房源详情页点击「发起预约看房」，管家会联系你。</p>
+        <a href="{% url 'listings:home' %}" class="btn btn-primary mt-5 rounded-full hover-lift">去房源广场</a>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

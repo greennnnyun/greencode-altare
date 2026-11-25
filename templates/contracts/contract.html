@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load eggshell %}
+{% block title %}租房合同 · {{ listing.title }}{% endblock %}
+{% block content %}
+<div class="container-page max-w-4xl pt-24">
+  {% if signed and just_signed %}
+    <div class="signed-bounce mb-5 flex items-center gap-4 rounded-card border border-success/30 bg-success/10 p-5">
+      <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-success text-white">
+        <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12l4 4L19 6" stroke-linecap="round"/></svg>
+      </span>
+      <div>
+        <p class="font-semibold text-success">合同签署成功</p>
+        <p class="text-sm text-text-muted">起租日与租期已锁定，管家会尽快与你联系安排入住。</p>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <a href="{% url 'listings:detail' listing.pk %}" class="text-sm text-text-muted hover:text-primary-strong">← 返回房源</a>
+      <h1 class="mt-2 text-[26px] sm:text-[32px]">租房合同</h1>
+      <p class="mt-1 text-sm text-text-muted">合同编号 EG-{{ application.pk|stringformat:"05d" }} · {{ application.get_status_display }}</p>
+    </div>
+    <span class="badge {{ application.status_badge_class }} badge-lg">{{ application.status_label }}</span>
+  </div>
+
+  <article class="paper paper-edge rounded-card p-6 sm:p-10">
+    <div class="text-center">
+      <h2 class="text-[22px] tracking-[0.2em]">房屋租赁合同</h2>
+      <p class="mt-2 text-xs text-text-muted">合同编号 EG-{{ application.pk|stringformat:"05d" }} · 签署地：上海市</p>
+    </div>
+
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 text-sm">
+      <div class="rounded-xl border border-border/70 bg-white/60 p-4">
+        <p class="text-xs text-text-muted">出租方（甲方）</p>
+        <p class="mt-1 font-medium">{{ listing.owner.profile.display_name }}</p>
+        <p class="text-xs text-text-muted">{{ listing.owner.email }}</p>
+      </div>
+      <div class="rounded-xl border border-border/70 bg-white/60 p-4">
+        <p class="text-xs text-text-muted">承租方（乙方）</p>
+        <p class="mt-1 font-medium">{{ application.user.profile.display_name }}</p>
+        <p class="text-xs text-text-muted">{{ application.user.email }}</p>
+      </div>
+    </div>
+
+    <div class="mt-4 rounded-xl border border-border/70 bg-white/60 p-4 text-sm">
+      <p class="text-xs text-text-muted">租赁房屋</p>
+      <p class="mt-1 font-medium">{{ listing.title }}</p>
+      <p class="text-xs text-text-muted">{{ listing.region_display }} · {{ listing.address }} · {{ listing.house_type_label }} · {{ listing.area }}㎡</p>
+    </div>
+
+    <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="rounded-xl border border-border/70 bg-white/60 p-3">
+        <p class="text-[11px] text-text-muted">月租金</p>
+        <p class="price-highlight mt-1 text-lg">¥{{ listing.rent }}</p>
+      </div>
+      <div class="rounded-xl border border-border/70 bg-white/60 p-3">
+        <p class="text-[11px] text-text-muted">押金</p>
+        <p class="price-highlight mt-1 text-lg">¥{{ application.deposit }}</p>
+      </div>
+      <div class="rounded-xl border border-border/70 bg-white/60 p-3">
+        <p class="text-[11px] text-text-muted">付款方式</p>
+        <p class="mt-1 text-sm font-medium">{{ listing.payment_label }}</p>
+      </div>
+      <div class="rounded-xl border border-primary/30 bg-primary/10 p-3">
+        <p class="text-[11px] text-text-muted">首期应付</p>
+        <p class="price-highlight mt-1 text-lg">¥{{ application.first_payment }}</p>
+      </div>
+    </div>
+    <p class="mt-2 text-right text-[11px] text-text-muted">首期应付 = 押金 + 月租 × {{ listing.payment_months }} 个月（由房源付款方式推导）</p>
+
+    <div class="mt-8 space-y-4">
+      {% for num, title, text in clauses %}
+        <div class="flex gap-3 border-b border-border/50 pb-4 last:border-0">
+          <span class="shrink-0 text-xs font-semibold text-primary-strong/80 pt-0.5">{{ num }}</span>
+          <div>
+            <h3 class="text-sm font-medium">{{ title }}</h3>
+            <p class="mt-1 text-[13px] leading-7 text-text-muted">{{ text }}</p>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 text-sm">
+      <div class="rounded-xl border border-border/70 bg-white/60 p-4">
+        <p class="text-xs text-text-muted">租赁期限</p>
+        <p class="mt-1 font-medium">{{ application.months }} 个月</p>
+      </div>
+      <div class="rounded-xl border border-border/70 bg-white/60 p-4">
+        <p class="text-xs text-text-muted">起租日</p>
+        <p class="mt-1 font-medium">{{ application.start_date|date:"Y 年 m 月 d 日" }}</p>
+      </div>
+    </div>
+
+    <div class="mt-8 flex flex-wrap items-end justify-between gap-6 border-t border-border/70 pt-6">
+      <div class="text-sm">
+        <p class="text-xs text-text-muted">甲方（出租方）签字</p>
+        <p class="mt-2 font-medium">{{ listing.owner.profile.display_name }}</p>
+      </div>
+      <div class="text-sm">
+        <p class="text-xs text-text-muted">乙方（承租方）签字</p>
+        <p class="mt-2 font-medium">{{ application.user.profile.display_name }}</p>
+      </div>
+      <div class="text-sm">
+        <p class="text-xs text-text-muted">签署时间</p>
+        <p class="mt-2 font-medium">{% if application.signed_at %}{{ application.signed_at|date:"Y-m-d H:i" }}{% else %}待签署{% endif %}</p>
+      </div>
+    </div>
+  </article>
+
+  <section class="card-soft mt-5 p-5 sm:p-6">
+    {% if signed %}
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-[18px]">合同已签署</h2>
+          <p class="mt-1 text-sm text-text-muted">起租日与租期已锁定，不可再次修改。重复提交不会产生新的合同记录。</p>
+        </div>
+        <div class="flex gap-2">
+          {% if is_applicant %}
+          <form method="post" action="{% url 'chat:start' listing.pk %}" class="hidden sm:inline-flex">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-ghost btn-sm rounded-full border border-border">联系房东</button>
+          </form>
+          {% endif %}
+          <a href="{% url 'listings:home' %}" class="btn btn-primary btn-sm rounded-full hover-lift">继续浏览房源</a>
+        </div>
+      </div>
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        <div class="rounded-xl bg-surface-muted p-3">
+          <p class="text-xs text-text-muted">起租日（已锁定）</p>
+          <p class="mt-1 font-medium">{{ application.start_date|date:"Y-m-d" }}</p>
+        </div>
+        <div class="rounded-xl bg-surface-muted p-3">
+          <p class="text-xs text-text-muted">租期（已锁定）</p>
+          <p class="mt-1 font-medium">{{ application.months }} 个月</p>
+        </div>
+      </div>
+    {% elif is_applicant %}
+      <h2 class="text-[18px]">确认并签署</h2>
+      <p class="mt-1 text-sm text-text-muted">起租日与租期可调整，签署后将锁定。首期应付不变：押金 + 月租 × {{ listing.payment_months }} 个月。</p>
+      <form method="post" action="{% url 'contracts:sign' application.pk %}" class="mt-4 space-y-4">
+        {% csrf_token %}
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="block">
+            <span class="mb-1 block text-xs text-text-muted">起租日</span>
+            <input type="date" name="start_date" required min="{{ min_start_date }}" value="{{ application.start_date|date:'Y-m-d' }}"
+                   class="input input-bordered w-full field-glow">
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-xs text-text-muted">租期</span>
+            <select name="months" class="select select-bordered w-full field-glow">
+              {% for option in month_options %}
+                <option value="{{ option }}" {% if application.months == option %}selected{% endif %}>{{ option }} 个月</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface-muted p-3 text-sm text-text-muted">
+          <input type="checkbox" name="agree" required class="checkbox checkbox-primary checkbox-sm mt-0.5">
+          <span>我已阅读并同意以上七条合同条款，确认房源、租金、押金与付款方式无误，愿按约定履行。</span>
+        </label>
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="submit" class="btn btn-primary rounded-full hover-lift px-6">勾选同意并签署合同</button>
+          <p class="text-[11px] text-text-muted">签署即视为电子签约，平台留痕保存签署时间。</p>
+        </div>
+      </form>
+    {% else %}
+      <h2 class="text-[18px]">等待承租方签署</h2>
+      <p class="mt-1 text-sm text-text-muted">合同条款已生成，待承租方在线确认并签署；签署后本页信息将锁定，双方可随时回看本协议。</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

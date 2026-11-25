@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}{% if is_landlord_view %}房源合同{% else %}我的合同{% endif %} · 蛋壳栖所{% endblock %}
+{% block content %}
+<div class="container-page pt-24">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-[26px] sm:text-[32px]">{% if is_landlord_view %}房源合同{% else %}我的合同{% endif %}</h1>
+      <p class="mt-1 text-sm text-text-muted">
+        {% if is_landlord_view %}与你名下房源相关的租房合同，按签署状态分组查看。{% else %}你提交的租房申请与电子租房协议，签署后信息锁定留痕。{% endif %}
+      </p>
+    </div>
+    {% if is_landlord_view %}
+      <form method="get" class="flex items-center gap-2">
+        <select name="listing" class="select select-bordered select-sm field-glow max-w-[220px]">
+          <option value="">全部房源</option>
+          {% for listing in listings %}
+            <option value="{{ listing.pk }}" {% if selected_listing == listing.pk|stringformat:'s' %}selected{% endif %}>#{{ listing.pk }} {{ listing.title }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-ghost btn-sm rounded-full border border-border">筛选</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <section class="mt-8">
+    <h2 class="text-[18px] font-medium">待签署合同（{{ pending_apps|length }}）</h2>
+    <div class="mt-4 space-y-3">
+      {% for app in pending_apps %}
+        <div class="card-soft p-4 sm:p-5">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="badge badge-sm {{ app.status_badge_class }}">{{ app.status_label }}</span>
+                <span class="text-[11px] text-text-muted">合同编号 EG-{{ app.pk|stringformat:"05d" }} · 提交于 {{ app.created_at|date:"Y-m-d H:i" }}</span>
+              </div>
+              <a href="{% url 'listings:detail' app.listing.pk %}" class="mt-1 block truncate font-medium hover:text-primary-strong">{{ app.listing.title }}</a>
+              <p class="text-xs text-text-muted">
+                {% if is_landlord_view %}承租方：{{ app.user.profile.display_name }}{% else %}出租方：{{ app.listing.owner.profile.display_name }}{% endif %}
+                · {{ app.listing.region_display }}
+              </p>
+              <p class="mt-1 text-xs text-text-muted">月租金 ¥{{ app.listing.rent }} · 押金 ¥{{ app.deposit }} · 首期应付 ¥{{ app.first_payment }} · {{ app.months }} 个月 · 起租 {{ app.start_date|date:"Y-m-d" }}</p>
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+              <a href="{% url 'contracts:contract' app.pk %}" class="btn btn-primary btn-xs rounded-full">查看合同</a>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="card-soft p-10 text-center">
+          <p class="text-sm text-text-muted">暂无待签署合同</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="mt-8">
+    <h2 class="text-[18px] font-medium">已签署合同（{{ signed_apps|length }}）</h2>
+    <div class="mt-4 space-y-3">
+      {% for app in signed_apps %}
+        <div class="card-soft p-4 sm:p-5">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="badge badge-sm {{ app.status_badge_class }}">{{ app.status_label }}</span>
+                <span class="text-[11px] text-text-muted">合同编号 EG-{{ app.pk|stringformat:"05d" }} · 签署于 {{ app.signed_at|date:"Y-m-d H:i" }}</span>
+              </div>
+              <a href="{% url 'listings:detail' app.listing.pk %}" class="mt-1 block truncate font-medium hover:text-primary-strong">{{ app.listing.title }}</a>
+              <p class="text-xs text-text-muted">
+                {% if is_landlord_view %}承租方：{{ app.user.profile.display_name }}{% else %}出租方：{{ app.listing.owner.profile.display_name }}{% endif %}
+                · {{ app.listing.region_display }}
+              </p>
+              <p class="mt-1 text-xs text-text-muted">月租金 ¥{{ app.listing.rent }} · 押金 ¥{{ app.deposit }} · 首期应付 ¥{{ app.first_payment }} · {{ app.months }} 个月 · 起租 {{ app.start_date|date:"Y-m-d" }}</p>
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+              <a href="{% url 'contracts:contract' app.pk %}" class="btn btn-ghost btn-xs rounded-full border border-border">查看合同</a>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="card-soft p-10 text-center">
+          <p class="text-sm text-text-muted">暂无已签署合同</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

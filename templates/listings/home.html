@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static eggshell %}
+{% block title %}蛋壳栖所 · 把每一次搬家，都变成一次归巢{% endblock %}
+{% block content %}
+<section class="relative">
+  <div class="relative h-[420px] sm:h-[460px] overflow-hidden bg-[oklch(0.88_0.06_75)]">
+    <img src="{% static 'img/hero.jpg' %}" alt="温馨公寓实景" class="absolute inset-0 h-full w-full object-cover" onerror="this.style.display='none'">
+    <div class="absolute inset-0 banner-mask"></div>
+    <div class="relative container-page h-full flex flex-col justify-center pt-8 pb-20">
+      <span class="reveal-up is-visible inline-flex w-fit items-center gap-2 rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs text-white/95 backdrop-blur">全国 · 用心挑选的每一间房</span>
+      <h1 class="reveal-up is-visible mt-4 max-w-2xl text-[28px] sm:text-[38px] font-semibold leading-tight text-white drop-shadow-sm">
+        把每一次搬家，<br class="sm:hidden">都变成一次归巢。
+      </h1>
+      <p class="reveal-up is-visible mt-3 max-w-xl text-sm sm:text-base text-white/85">暖白与蛋壳黄的小屋，真实房源、真实房东、真实合同。愿你在城市里，也有一处柔软的落脚。</p>
+    </div>
+  </div>
+
+  <div class="container-page relative z-10 -mt-12 sm:-mt-14">
+    <form method="get" action="{% url 'listings:home' %}" class="card-soft p-4 sm:p-5 reveal-zoom is-visible">
+      <div class="grid grid-cols-2 gap-3 lg:grid-cols-[1.1fr_1fr_1fr_1fr_1.1fr_1.2fr_auto] lg:items-end">
+        <label class="block">
+          <span class="mb-1 block text-xs text-text-muted">城市</span>
+          <select name="city" class="select select-bordered w-full field-glow text-sm"
+                  hx-get="{% url 'listings:region_options' %}" hx-trigger="change"
+                  hx-target="#filter-district" hx-include="this" hx-swap="innerHTML">
+            <option value="">全部城市</option>
+            {% for group in city_groups %}
+              <optgroup label="{{ group.province.name }}">
+                {% for city in group.cities %}
+                  <option value="{{ city.code }}" {% if filters.city == city.code %}selected{% endif %}>{{ city.name }}</option>
+                {% endfor %}
+              </optgroup>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs text-text-muted">区域</span>
+          <select name="district" id="filter-district" class="select select-bordered w-full field-glow text-sm">
+            <option value="">全部区域</option>
+            {% for region in district_options %}
+              <option value="{{ region.code }}" {% if filters.district == region.code %}selected{% endif %}>{{ region.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs text-text-muted">起价（元/月）</span>
+          <input type="number" name="min_rent" min="0" step="100" value="{{ filters.min_rent }}" placeholder="不限" class="input input-bordered w-full field-glow text-sm">
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs text-text-muted">上限（元/月）</span>
+          <input type="number" name="max_rent" min="0" step="100" value="{{ filters.max_rent }}" placeholder="不限" class="input input-bordered w-full field-glow text-sm">
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs text-text-muted">户型</span>
+          <select name="house_type" class="select select-bordered w-full field-glow text-sm">
+            <option value="">全部户型</option>
+            {% for code, label in house_types %}
+              <option value="{{ code }}" {% if filters.house_type == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs text-text-muted">排序</span>
+          <select name="sort" class="select select-bordered w-full field-glow text-sm">
+            <option value="new" {% if filters.sort == 'new' %}selected{% endif %}>最新发布</option>
+            <option value="price_asc" {% if filters.sort == 'price_asc' %}selected{% endif %}>价格从低到高</option>
+            <option value="price_desc" {% if filters.sort == 'price_desc' %}selected{% endif %}>价格从高到低</option>
+          </select>
+        </label>
+        <div class="col-span-2 lg:col-span-1 flex gap-2">
+          <button type="submit" class="btn btn-primary flex-1 rounded-full hover-lift">找房</button>
+          <a href="{% url 'listings:home' %}" class="btn btn-ghost rounded-full border border-border">清空</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="container-page mt-14">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-[22px] sm:text-[26px]">今日房源</h2>
+      <p class="mt-1 text-sm text-text-muted">共 <span class="font-semibold text-text">{{ result_count }}</span> 套房源，筛选结果与卡片数量一致。</p>
+    </div>
+    <div class="hidden sm:flex items-center gap-2 text-xs text-text-muted">
+      <span class="inline-block h-1.5 w-1.5 rounded-full bg-primary"></span> 房源信息由房东实名发布
+    </div>
+  </div>
+
+  <div class="listing-grid mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 lg:gap-6">
+    {% for listing in listings %}
+      {% widthratio forloop.counter0 1 70 as delay %}
+      <div class="reveal-up" style="--reveal-delay: {{ delay }}ms">
+        {% include 'listings/partials/listing_card.html' with listing=listing favorited=listing.favorited %}
+      </div>
+    {% empty %}
+      <div class="col-span-full card-soft p-12 text-center">
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary-strong">
+          <svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3c3.6 2.4 6 6.1 6 9.5A6 6 0 0 1 6 12.5C6 9.1 8.4 5.4 12 3Z"/></svg>
+        </div>
+        <h3 class="mt-4 text-lg">暂时没有符合条件的房源</h3>
+        <p class="mt-1 text-sm text-text-muted">换个区域或放宽价格试试，或联系客服 400-820-8800。</p>
+        <a href="{% url 'listings:home' %}" class="btn btn-primary mt-5 rounded-full hover-lift">查看全部房源</a>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="container-page mt-16">
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div class="card-soft p-5 reveal-up" style="--reveal-delay:0ms">
+      <p class="text-sm font-medium">真实房源</p>
+      <p class="mt-2 text-sm text-text-muted">每套房源都由房东实名发布，图片与价格透明可查。</p>
+    </div>
+    <div class="card-soft p-5 reveal-up" style="--reveal-delay:80ms">
+      <p class="text-sm font-medium">看房有约</p>
+      <p class="mt-2 text-sm text-text-muted">线上预约、管家跟进，不用反复电话确认时间。</p>
+    </div>
+    <div class="card-soft p-5 reveal-up" style="--reveal-delay:160ms">
+      <p class="text-sm font-medium">合同留痕</p>
+      <p class="mt-2 text-sm text-text-muted">在线签署租房合同，租期、押金、付款方式一目了然。</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

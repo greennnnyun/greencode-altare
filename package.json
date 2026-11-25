@@ -1,0 +1,19 @@
+{
+  "name": "eggshell-dwelling",
+  "version": "1.0.0",
+  "private": true,
+  "description": "蛋壳栖所前端构建（Tailwind CSS v4 + DaisyUI 5）",
+  "scripts": {
+    "build:css": "node node_modules/@tailwindcss/cli/dist/index.mjs -i ./static/src/styles.css -o ./static/css/app.css --minify",
+    "watch:css": "node node_modules/@tailwindcss/cli/dist/index.mjs -i ./static/src/styles.css -o ./static/css/app.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "daisyui": "^5.7.50",
+    "tailwindcss": "^4.3.3"
+  },
+  "dependencies": {
+    "alpinejs": "^3.17.5",
+    "htmx.org": "^2.0.11"
+  }
+}

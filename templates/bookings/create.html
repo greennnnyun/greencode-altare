@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}预约看房 · {{ listing.title }}{% endblock %}
+{% block content %}
+<div class="container-page max-w-md pt-24 pb-10">
+  <div class="flex items-center justify-between">
+    <h1 class="text-[22px]">预约看房</h1>
+    <a href="{% url 'listings:detail' listing.pk %}" class="text-sm text-text-muted hover:text-primary-strong">返回房源</a>
+  </div>
+  <p class="mt-1 text-sm text-text-muted">{{ listing.title }} · {{ listing.region_display }}</p>
+  <div class="card-soft mt-5 p-5">
+    {% include 'bookings/partials/viewing_form.html' %}
+  </div>
+</div>
+{% endblock %}

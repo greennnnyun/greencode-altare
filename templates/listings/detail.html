@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% load static eggshell %}
+{% block title %}{{ listing.title }} · 蛋壳栖所{% endblock %}
+{% block body_class %}has-mobile-bar{% endblock %}
+{% block content %}
+<div class="container-page pt-6">
+  <a href="{% url 'listings:home' %}" class="inline-flex items-center gap-1 text-sm text-text-muted hover:text-primary-strong transition-colors">
+    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 19l-7-7 7-7" stroke-linecap="round"/></svg>
+    返回房源广场
+  </a>
+
+  <div class="mt-4 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+    <div class="min-w-0">
+      <div x-data="{i: 0, total: {{ listing.gallery_images|length }}}"
+           @keydown.window.arrow-left.prevent="if(total>1){i = (i + total - 1) % total}"
+           @keydown.window.arrow-right.prevent="if(total>1){i = (i + 1) % total}"
+           class="reveal-zoom is-visible">
+        <div class="relative aspect-[16/10] overflow-hidden rounded-card border border-border bg-surface-muted shadow-card">
+          {% if listing.gallery_images %}
+            {% for image in listing.gallery_images %}
+              <div x-show="i === {{ forloop.counter0 }}" class="absolute inset-0" {% if not forloop.first %}x-cloak{% endif %}>
+                <img src="{{ image|media_url }}" alt="{{ listing.title }} 图片 {{ forloop.counter }}" class="h-full w-full object-cover">
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,oklch(0.93_0.06_80),oklch(0.86_0.09_72))]">
+              <span class="text-3xl font-semibold text-white/80">蛋壳栖所</span>
+            </div>
+          {% endif %}
+          <div class="absolute left-3 top-3 flex gap-1.5">
+            <span class="rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium shadow-sm backdrop-blur">{{ listing.house_type_label }}</span>
+            {% if is_owner %}
+              <span class="rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm badge {{ listing.status_badge_class }}">{{ listing.status_label }}</span>
+            {% endif %}
+          </div>
+          {% if listing.gallery_images|length > 1 %}
+            <button type="button" @click="i = (i + total - 1) % total" aria-label="上一张"
+              class="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-text shadow-sm backdrop-blur hover:bg-white transition-colors">
+              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 19l-7-7 7-7" stroke-linecap="round"/></svg>
+            </button>
+            <button type="button" @click="i = (i + 1) % total" aria-label="下一张"
+              class="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-text shadow-sm backdrop-blur hover:bg-white transition-colors">
+              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5l7 7-7 7" stroke-linecap="round"/></svg>
+            </button>
+            <div class="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/25 px-2 py-1 backdrop-blur">
+              {% for image in listing.gallery_images %}
+                <button type="button" @click="i = {{ forloop.counter0 }}" aria-label="第 {{ forloop.counter }} 张"
+                  class="h-1.5 rounded-full transition-all" :class="i === {{ forloop.counter0 }} ? 'w-4 bg-white' : 'w-1.5 bg-white/55'"></button>
+              {% endfor %}
+            </div>
+            <span class="absolute bottom-3 right-3 rounded-full bg-black/30 px-2 py-0.5 text-[11px] text-white backdrop-blur" x-text="(i+1) + ' / ' + total"></span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="mt-6 reveal-up">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="badge badge-outline border-primary/50 text-primary-strong">{{ listing.house_type_label }}</span>
+          <span class="badge badge-ghost">{{ listing.region_display }}</span>
+          <span class="text-xs text-text-muted">发布于 {{ listing.created_at|date:"Y-m-d" }}</span>
+        </div>
+        <h1 class="mt-2 text-[26px] sm:text-[32px] leading-tight">{{ listing.title }}</h1>
+        <p class="mt-2 text-sm text-text-muted">{{ listing.address }}</p>
+      </div>
+
+      <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div class="card-soft p-4 reveal-up" style="--reveal-delay:0ms">
+          <p class="text-xs text-text-muted">面积</p>
+          <p class="mt-1 text-lg font-semibold">{{ listing.area }}<span class="ml-0.5 text-xs font-normal text-text-muted">㎡</span></p>
+        </div>
+        <div class="card-soft p-4 reveal-up" style="--reveal-delay:60ms">
+          <p class="text-xs text-text-muted">楼层</p>
+          <p class="mt-1 text-lg font-semibold">{{ listing.floor }}</p>
+        </div>
+        <div class="card-soft p-4 reveal-up" style="--reveal-delay:120ms">
+          <p class="text-xs text-text-muted">朝向</p>
+          <p class="mt-1 text-lg font-semibold">{{ listing.orientation }}</p>
+        </div>
+        <div class="card-soft p-4 reveal-up" style="--reveal-delay:180ms">
+          <p class="text-xs text-text-muted">付款方式</p>
+          <p class="mt-1 text-lg font-semibold">{{ listing.payment_label }}</p>
+        </div>
+      </div>
+
+      <section class="mt-8 card-soft p-5 sm:p-6 reveal-up">
+        <h2 class="text-[20px]">关于这套房子</h2>
+        <p class="mt-3 whitespace-pre-line text-sm leading-7 text-text-muted">{{ listing.description }}</p>
+      </section>
+
+      <section class="mt-5 card-soft p-5 sm:p-6 reveal-up">
+        <h2 class="text-[20px]">配套设施</h2>
+        <div class="mt-3 flex flex-wrap gap-2">
+          {% for amenity in listing.amenities %}
+            <span class="rounded-full border border-border bg-surface-muted px-3 py-1.5 text-xs text-text">{{ amenity }}</span>
+          {% empty %}
+            <span class="text-sm text-text-muted">房东暂未填写设施信息</span>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="mt-5 card-soft p-5 sm:p-6 reveal-up">
+        <h2 class="text-[20px]">租金说明</h2>
+        <div class="mt-3 grid gap-3 sm:grid-cols-3">
+          <div class="rounded-xl bg-surface-muted p-3">
+            <p class="text-xs text-text-muted">月租金</p>
+            <p class="price-highlight mt-1 text-lg">¥{{ listing.rent }}</p>
+          </div>
+          <div class="rounded-xl bg-surface-muted p-3">
+            <p class="text-xs text-text-muted">付款方式</p>
+            <p class="mt-1 text-sm font-medium">{{ listing.payment_label }}</p>
+          </div>
+          <div class="rounded-xl bg-surface-muted p-3">
+            <p class="text-xs text-text-muted">押金</p>
+            <p class="mt-1 text-sm font-medium">¥{{ listing.rent }}（1 个月）</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="hidden lg:block lg:sticky lg:top-24">
+      <div class="card-soft p-5">
+        <div class="flex items-end justify-between gap-3">
+          <p class="price-highlight text-[28px]">¥{{ listing.rent }}<span class="ml-1 text-xs font-normal text-text-muted">/月</span></p>
+          <span class="badge badge-outline border-border text-xs">{{ listing.payment_label }}</span>
+        </div>
+        <p class="mt-1 text-xs text-text-muted">{{ listing.payment_label }} · 首期约 ¥{{ listing.first_payment_estimate }}</p>
+        <div class="mt-4 space-y-2">
+          {% if user.is_authenticated %}
+            {% include 'listings/partials/favorite_button.html' with listing=listing favorited=favorited mode='detail' %}
+          {% else %}
+            <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}" class="btn btn-outline btn-sm w-full rounded-full border-border">登录后收藏</a>
+          {% endif %}
+
+          {% if is_owner %}
+            <a href="{% url 'listings:listing_edit' listing.pk %}" class="btn btn-primary btn-sm w-full rounded-full hover-lift">编辑我的房源</a>
+          {% elif not user.is_authenticated %}
+            <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}" class="btn btn-primary btn-sm w-full rounded-full hover-lift">登录后预约 / 申请</a>
+          {% elif user.is_tenant and listing.status == 'listed' %}
+            {% if existing_application %}
+              <a href="{% url 'contracts:contract' existing_application.pk %}" class="btn btn-primary btn-sm w-full rounded-full hover-lift">
+                {% if existing_application.status == 'signed' %}查看已签合同{% else %}继续签署合同{% endif %}
+              </a>
+            {% else %}
+              <button type="button" onclick="document.getElementById('viewing-modal').showModal()" class="btn btn-primary btn-sm w-full rounded-full hover-lift">发起预约看房</button>
+              <form method="post" action="{% url 'contracts:apply' listing.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary btn-sm w-full rounded-full hover-lift">申请租房</button>
+              </form>
+            {% endif %}
+            <form method="post" action="{% url 'chat:start' listing.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-ghost btn-sm w-full rounded-full border border-border">联系房东聊聊</button>
+            </form>
+          {% else %}
+            <button type="button" class="btn btn-primary btn-sm w-full rounded-full" disabled>当前不可操作</button>
+          {% endif %}
+        </div>
+        <div class="mt-4 border-t border-border pt-3 text-[11px] leading-6 text-text-muted">
+          <p>看房由管家 1 对 1 跟进，预约后请留意来电。</p>
+          <p>平台仅提供信息撮合与合同留痕，签约前请核验房屋权属。</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  {% if related %}
+    <section class="mt-14">
+      <h2 class="text-[22px]">同城同区的其他房源</h2>
+      <div class="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        {% for item in related %}
+          {% include 'listings/partials/listing_card.html' with listing=item favorited=item.favorited %}
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+</div>
+
+{% if user.is_authenticated and user.is_tenant and not is_owner and listing.status == 'listed' %}
+<dialog id="viewing-modal" class="modal">
+  <div class="modal-box max-w-md rounded-card border border-border bg-surface p-0">
+    <div class="flex items-center justify-between border-b border-border px-5 py-4">
+      <div>
+        <h3 class="text-lg font-semibold">预约看房</h3>
+        <p class="text-xs text-text-muted">{{ listing.title }}</p>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm btn-circle" onclick="document.getElementById('viewing-modal').close()" aria-label="关闭">✕</button>
+    </div>
+    <div class="p-5">
+      {% include 'bookings/partials/viewing_form.html' with form=viewing_form %}
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button aria-label="关闭">close</button></form>
+</dialog>
+{% endif %}
+
+<div class="mobile-action-bar">
+  <div class="mr-auto flex flex-col leading-tight">
+    <span class="price-highlight text-[20px]">¥{{ listing.rent }}<span class="text-[11px] font-normal text-text-muted">/月</span></span>
+    <span class="text-[10px] text-text-muted">{{ listing.payment_label }}</span>
+  </div>
+  {% if is_owner %}
+    <a href="{% url 'listings:listing_edit' listing.pk %}" class="btn btn-primary btn-sm rounded-full">编辑房源</a>
+  {% elif not user.is_authenticated %}
+    <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}" class="btn btn-primary btn-sm rounded-full">登录后预约</a>
+  {% elif user.is_tenant and listing.status == 'listed' %}
+    {% if existing_application %}
+      <a href="{% url 'contracts:contract' existing_application.pk %}" class="btn btn-primary btn-sm rounded-full">查看合同</a>
+    {% else %}
+      <button type="button" onclick="document.getElementById('viewing-modal').showModal()" class="btn btn-outline btn-sm rounded-full border-border">预约</button>
+      <form method="post" action="{% url 'contracts:apply' listing.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-sm rounded-full">申请租房</button>
+      </form>
+    {% endif %}
+  {% else %}
+    <button type="button" class="btn btn-primary btn-sm rounded-full" disabled>不可操作</button>
+  {% endif %}
+</div>
+{% endblock %}
